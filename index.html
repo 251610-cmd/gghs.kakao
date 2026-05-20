@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카카오맵 장소 검색 서비스</title>
+    
+    <style>
+        /* [CSS] 화면 전체를 사용하기 위한 기본 설정 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+        }
+
+        /* [CSS] Flexbox를 사용해 화면을 좌우 2분할하는 컨테이너 */
+        .container {
+            display: flex;
+            height: 100vh; /* 화면 높이의 100%를 차지함 */
+        }
+
+        /* [CSS] 왼쪽 패널 (검색창 및 결과 리스트) */
+        .left-panel {
+            width: 300px;
+            padding: 20px;
+            box-sizing: border-box;
+            border-right: 1px solid #ddd;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* [CSS] 오른쪽 패널 (지도 영역) */
+        .right-panel {
+            flex-grow: 1; /* 남은 공간을 모두 차지하도록 설정 */
+            position: relative;
+        }
+
+        /* [CSS] 지도가 들어갈 실제 div 요소의 크기 */
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* [CSS] 검색 UI 꾸미기 */
+        .search-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        #searchInput {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px 0 0 4px;
+        }
+
+        #searchBtn {
+            padding: 8px 15px;
+            background-color: #ffe812; /* 카카오 메인 컬러 */
+            border: 1px solid #ccc;
+            border-left: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #resultList {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto; /* 내용이 많아지면 스크롤 생성 */
+        }
+    </style>
+
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9eeaf0841c08a384eabb2f16d0262db8&libraries=services&autoload=false"></script>
+</head>
+<body>
+
+    <div class="container">
+        <div class="left-panel">
+            <h2>장소 검색</h2>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="장소 입력...">
+                <button id="searchBtn">검색</button>
+            </div>
+            <ul id="resultList">
+                </ul>
+        </div>
+
+        <div class="right-panel">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script>
+        // [JS] 카카오맵이 완전히 로드된 후에 실행되도록 하는 안전 장치 (로딩 에러 방지)
+        kakao.maps.load(function() {
+            
+            const mapContainer = document.getElementById('map'); 
+            let map; // 지도 객체를 담을 변수
+
+            // HTML5의 Geolocation API를 사용해 사용자의 현재 위치 권한을 요청하고 좌표를 가져옴
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    // 권한을 허용하고 위치를 성공적으로 가져왔을 때 실행되는 함수
+                    function(position) {
+                        const latitude = position.coords.latitude;   // 위도
+                        const longitude = position.coords.longitude; // 경도
+                        
+                        // 카카오맵에서 사용하는 좌표 객체로 변환
+                        const currentPosition = new kakao.maps.LatLng(latitude, longitude);
+
+                        // 지도 생성 시 필요한 설정 옵션
+                        const mapOptions = {
+                            center: currentPosition, // 지도의 중심을 현재 위치로 설정
+                            level: 5                 // 지도의 확대 레벨 (요청한 5레벨)
+                        };
+
+                        // 지도 생성
+                        map = new kakao.maps.Map(mapContainer, mapOptions);
+
+                        // 내 위치에 마커(핀) 하나 찍어주기 (시각적으로 확인하기 좋음)
+                        const marker = new kakao.maps.Marker({
+                            position: currentPosition,
+                            map: map
+                        });
+                    }, 
+                    // 권한을 거부하거나 에러가 발생했을 때 실행되는 함수
+                    function(error) {
+                        alert("위치 권한을 허용하지 않아 기본 위치(서울시청)로 지도를 엽니다.");
+                        
+                        const defaultPosition = new kakao.maps.LatLng(37.566826, 126.9786567);
+                        const mapOptions = { center: defaultPosition, level: 5 };
+                        
+                        map = new kakao.maps.Map(mapContainer, mapOptions);
+                    }
+                );
+            } else {
+                // 웹 브라우저가 위치 정보를 지원하지 않을 때의 예외 처리
+                alert("이 브라우저에서는 현재 위치를 알 수 없습니다.");
+                const defaultPosition = new kakao.maps.LatLng(37.566826, 126.9786567);
+                const mapOptions = { center: defaultPosition, level: 5 };
+                map = new kakao.maps.Map(mapContainer, mapOptions);
+            }
+        });
+    </script>
+</body>
+</html>
