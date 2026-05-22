@@ -230,4 +230,70 @@
             const searchOptions = {};
             if (currentPos) {
                 searchOptions.location = currentPos;
-                searchOptions.radius = 5000; //
+                searchOptions.radius = 5000; // 5km 반경 내 우선 검색
+                searchOptions.sort = kakao.maps.services.SortBy.DISTANCE;
+            }
+
+            // 카카오 API로 키워드 검색 요청
+            placeService.keywordSearch(keyword, searchCallback, searchOptions);
+        }
+
+        // [4] 검색 완료 후 호출되는 콜백 함수
+        function searchCallback(data, status, pagination) {
+            if (status === kakao.maps.services.Status.OK) {
+                displaySearchResults(data);
+            } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
+                alert('검색 결과가 없습니다.');
+            } else if (status === kakao.maps.services.Status.ERROR) {
+                alert('검색 중 오류가 발생했습니다.');
+            }
+        }
+
+        // [5] 검색 결과를 화면과 지도에 표시하는 함수
+        function displaySearchResults(places) {
+            const listContainer = document.getElementById('resultList');
+            
+            clearMapAndList(); // 기존에 찍혀있던 마커와 리스트 초기화 (별표 Overlay는 안 지워짐)
+            
+            const mapBounds = new kakao.maps.LatLngBounds();
+
+            places.forEach(function(place) {
+                const placePos = new kakao.maps.LatLng(place.y, place.x);
+                
+                // 지도에 일반 검색 마커 생성
+                const marker = new kakao.maps.Marker({
+                    position: placePos,
+                    map: map
+                });
+                markers.push(marker); 
+                mapBounds.extend(placePos); 
+
+                // 왼쪽 패널에 추가할 리스트 아이템 HTML 만들기
+                const li = document.createElement('li');
+                li.className = 'result-item';
+                li.innerHTML = `<strong>${place.place_name}</strong><p>${place.address_name}</p>`;
+                
+                // 리스트 아이템을 클릭하면 해당 장소로 지도 중심을 이동시킴
+                li.addEventListener('click', function() {
+                    map.setCenter(placePos);
+                    map.setLevel(3); 
+                });
+
+                listContainer.appendChild(li);
+            });
+
+            // 검색된 장소들이 모두 한눈에 보이게 지도 중심/레벨 자동 조절
+            map.setBounds(mapBounds);
+        }
+
+        // 기존 마커와 결과 리스트를 지워주는 청소 함수
+        function clearMapAndList() {
+            markers.forEach(function(marker) {
+                marker.setMap(null);
+            });
+            markers = [];
+            document.getElementById('resultList').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
